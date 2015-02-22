@@ -1,0 +1,22 @@
+{
+  "name": "flux-store-base",
+  "version": "0.0.1",
+  "description": "Yet another store utility for flux",
+  "keywords": [
+    "flux",
+    "store"
+  ],
+  "homepage": "https://github.com/fatfisz/flux-store-base",
+  "repository": "https://github.com/fatfisz/flux-store-base.git",
+  "author": {
+    "name": "FatFisz",
+    "url": "https://github.com/fatfisz"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "dependencies": {
+    "object-assign": "^2.0.0"
+  }
+}
