@@ -8,14 +8,8 @@ var assign = require('object-assign');
  * Events
  */
 
-var VALID_EVENT_NAME = /^[A-Z]+(_[A-Z]+)*$/;
 function getNameFromEvent(name) {
-
-  function mapPart(part) {
-    return part[0] + part.substring(1).toLowerCase();
-  }
-
-  return name.split('_').map(mapPart).join('');
+  return name.substring(0, 1).toUpperCase() + name.substring(1);
 }
 
 function registerEventsHandlers(store, config) {
@@ -32,10 +26,6 @@ function registerEventsHandlers(store, config) {
   }
 
   events.forEach(function (event) {
-    if (process.env.NODE_ENV !== 'production' && !VALID_EVENT_NAME.test(event)) {
-      throw new Error(event + ' is not a valid event name');
-    }
-
     var name = getNameFromEvent(event);
 
     store['emit' + name] = function () {
