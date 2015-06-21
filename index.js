@@ -15,6 +15,7 @@ function getNameFromEvent(name) {
 function registerEventsHandlers(store, config) {
   var events = config.events;
   var maxListeners = config.maxListeners;
+  var displayName = config.displayName;
 
   if (!Array.isArray(events) || !events.length) {
     return null;
@@ -40,6 +41,30 @@ function registerEventsHandlers(store, config) {
       eventEmitter.removeListener(event, fn);
     };
   });
+
+  store.emit = function (event) {
+    if (process.env.NODE_ENV !== 'production' && events.indexOf(event) === -1) {
+      throw new Error('Store ' + displayName + ' does not handle the event "' + event + '"');
+    }
+
+    eventEmitter.emit(event);
+  };
+
+  store.on = function (event, fn) {
+    if (process.env.NODE_ENV !== 'production' && events.indexOf(event) === -1) {
+      throw new Error('Store ' + displayName + ' does not handle the event "' + event + '"');
+    }
+
+    eventEmitter.on(event, fn);
+  };
+
+  store.off = function (event, fn) {
+    if (process.env.NODE_ENV !== 'production' && events.indexOf(event) === -1) {
+      throw new Error('Store ' + displayName + ' does not handle the event "' + event + '"');
+    }
+
+    eventEmitter.removeListener(event, fn);
+  };
 }
 
 /**
@@ -48,7 +73,7 @@ function registerEventsHandlers(store, config) {
 
 var VALID_ACTION_NAME = /^on[A-Z]/;
 var NAME_PARTS_SELECTOR = /[A-Z][^A-Z]*/g;
-function getActionFromName(name) {
+function getActionTypeFromName(name) {
 
   function mapPart(part) {
     return part.toUpperCase();
@@ -57,7 +82,21 @@ function getActionFromName(name) {
   return name.match(NAME_PARTS_SELECTOR).map(mapPart).join('_');
 }
 
-function getActionMapping(actionTypes, config) {
+function getDispatcherMethodName(methodName) {
+  // Substitute 'on' with 'dispatch'
+  return 'dispatch' + methodName.substring(2);
+}
+
+function addDispatcherMethod(dispatcher, dispatcherMethodName, actionType) {
+  dispatcher[dispatcherMethodName] = function (data) {
+    dispatcher.dispatch({
+      actionType: actionType,
+      data: data,
+    });
+  };
+}
+
+function getActionMapping(dispatcher, config) {
   // It's better to create a new object only when it's needed.
   var mapping = null;
   var somethingAdded = false;
@@ -67,17 +106,18 @@ function getActionMapping(actionTypes, config) {
       return;
     }
 
-    var action = getActionFromName(methodName);
+    var actionType = getActionTypeFromName(methodName);
+    var dispatcherMethodName = getDispatcherMethodName(methodName);
 
-    if (process.env.NODE_ENV !== 'production' && !(action in actionTypes)) {
-      throw new Error('Unknown action type: ' + action + ' (from method ' + methodName + ')');
+    if (!dispatcher.hasOwnProperty(dispatcherMethodName)) {
+      addDispatcherMethod(dispatcher, dispatcherMethodName, actionType);
     }
 
     if (!somethingAdded) {
       mapping = {};
       somethingAdded = true;
     }
-    mapping[actionTypes[action]] = config[methodName];
+    mapping[actionType] = config[methodName];
   });
 
   return mapping;
@@ -85,9 +125,9 @@ function getActionMapping(actionTypes, config) {
 
 function registerStoreInDispatcher(store, dispatcher, actionMapping) {
   store.dispatchToken = dispatcher.register(function (action) {
-    var actionHandler = actionMapping[action.type];
+    var actionHandler = actionMapping[action.actionType];
     if (actionHandler) {
-      actionHandler.call(store, action);
+      actionHandler.call(store, action.data);
     }
   });
 }
@@ -96,10 +136,14 @@ function registerStoreInDispatcher(store, dispatcher, actionMapping) {
  * Store
  */
 
-function Store(dispatcher, actionTypes, config) {
+function Store(dispatcher, config) {
+  if (!config.displayName) {
+    config.displayName = 'anonymous';
+  }
+
   registerEventsHandlers(this, config);
 
-  var actionMapping = getActionMapping(actionTypes, config);
+  var actionMapping = getActionMapping(dispatcher, config);
   if (actionMapping) {
     registerStoreInDispatcher(this, dispatcher, actionMapping);
   }
@@ -107,9 +151,9 @@ function Store(dispatcher, actionTypes, config) {
   assign(this, config);
 }
 
-function inject(dispatcher, actionTypes) {
+function inject(dispatcher) {
   return function (config) {
-    return Store.call(this, dispatcher, actionTypes, config);
+    return Store.call(this, dispatcher, config);
   };
 }
 
