@@ -25,7 +25,7 @@ There are also some things going under the hood, but more about that below (see:
 Action creator:
 ```js
 function createSomeAction(someData) {
-  AppDispatcher.dispatchSomeAction({ someData });
+  AppDispatcher.dispatchSomeAction(someData);
 }
 ```
 
@@ -45,7 +45,7 @@ var MyFunkyStore = new Store(AppDispatcher, {
     return this.something;
   },
 
-  onSomeAction({ someData }) {
+  onSomeAction(someData) {
     this.something = someData;
     this.emit('theChange');
   },
