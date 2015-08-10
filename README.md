@@ -2,6 +2,12 @@
 
 > Yet another store utility for flux.
 
+# Deprecation notice
+
+flux-store-base is superseded by [floox](https://github.com/fatfisz/floox) which, apart form the shorter name, introduces a few new boilerplate reductions and a simple solution for circular dependency of stores.
+
+It won't be maintained anymore.
+
 ## Getting Started
 
 Install the package with this command:
